@@ -54,7 +54,7 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
 
     public void setNewTableName(String name) {
         createTable = "create table if not exists " + name + " ("
-                + "id integer primary key autoincrement, "
+                + "id integer  , "
                 + "result integer, "
                 + "address text, "
                 + "project_name text)";

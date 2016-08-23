@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,6 +15,8 @@ import android.widget.Toast;
 import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
 
 public class LoginActivity extends BaseActivity {
+
+    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,15 +43,27 @@ public class LoginActivity extends BaseActivity {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 db.beginTransaction();//开启事务
+                String projectNameStr = null;
                 try {
                     db.execSQL("insert into AddressName (address) values(?)",
-                               new String[]{address.getText().toString()});
+                               new String[]{address.getText().toString()});//向APP自带数据库中添加此服务器名称
 
-                    Cursor cursor = db.rawQuery("select max(id) from AddressName", null);
-                    Integer thisId = cursor.getInt(cursor.getColumnIndex("id")) + 1;
+                    /*
+                    * 这里需要优化，，，，如何取得最大ID？
+                    * */
+
+                    Cursor cursor = db.rawQuery("select * from AddressName", null);
+                    cursor.moveToLast();
+                    int thisId1 = cursor.getInt(cursor.getColumnIndex("id"));
+                    Integer thisId = thisId1 + 1;
+                    thisId += 1;
+                    cursor.close();
 
                     ThisDatabaseHelper UserHelper;
-                    if (TextUtils.isEmpty(projectName.getText().toString())) {
+                    projectNameStr = projectName.getText().toString();
+                    Log.d(TAG, "onClick: " + projectNameStr);
+
+                    if (TextUtils.isEmpty(projectNameStr)) {
                         Toast.makeText(LoginActivity.this, "请稍后在设置中输入项目名称", Toast.LENGTH_SHORT)
                                 .show();
 
@@ -59,18 +74,19 @@ public class LoginActivity extends BaseActivity {
                         UserHelper = new ThisDatabaseHelper(LoginActivity.this,
                                                             "Database" + thisId.toString() + ".db",
                                                             null, 1,
-                                                            projectName.getText().toString());
+                                                            projectNameStr);
                     }
                     UserHelper.getWritableDatabase();//新建此服务器的数据库
                     db.setTransactionSuccessful();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    Log.d(TAG, "onClick: Exception");
                 } finally {
                     db.endTransaction();//结束事务
                 }
 
-                LoginWebViewActivity.actionStart(LoginActivity.this, address.getText().toString(),
-                                                 projectName.getText().toString(), false);
+                LoginWebViewActivity.startAction(LoginActivity.this, address.getText().toString(),
+                                                 projectNameStr, false);
                 finish();
             }
         });

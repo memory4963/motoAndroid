@@ -30,15 +30,22 @@ public class Connection {
     public static URL SpliceURL(String projectName, Integer num, String urlStr) {
         try {
 
+            Log.d(TAG, "SpliceURL: urlStr:" + urlStr);
+            Log.d(TAG, "SpliceURL: projectName:" + projectName);
             String urlString;
             if (!((urlStr.substring(urlStr.length() - 1)).equals("/"))) {
-                urlString = urlStr + "/";
+                urlString = "http://" + urlStr + "/";
             } else {
-                urlString = urlStr;
+                urlString = "http://" + urlStr;
             }
 
-            return new URL(urlString + Connection.EXTRASTRFIRST + projectName + "/" + num
-                    .toString() + Connection.EXTRASTRSECONED);
+            String completeStr =
+                    urlString + Connection.EXTRASTRFIRST + projectName + "/" + num.toString()
+                            + Connection.EXTRASTRSECONED;
+
+            URL url = new URL(completeStr);//还需要确定。。。。
+
+            return url;
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -69,7 +76,7 @@ public class Connection {
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(8000);
-            connection.setReadTimeout(8000);
+
             InputStream in = connection.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             StringBuilder response = new StringBuilder();
@@ -77,7 +84,10 @@ public class Connection {
             while ((line = reader.readLine()) != null) {
                 response.append(line);
             }
+
             responseAll = response.toString();
+            Log.d(TAG, "connecting: (parseJSONWithGSON方法已运行)responseAll:" + responseAll);
+
             return parseJSONWithGSON(responseAll);
         } catch (Exception e) {
             e.printStackTrace();
@@ -106,8 +116,10 @@ public class Connection {
         } catch (Exception e) {
             Log.d(TAG, "parseJSONWithGSON: account haven't login");
             e.printStackTrace();
+            Log.d(TAG, "parseJSONWithGSON: jsonData is null");
             return null;
         }
+        Log.d(TAG, "parseJSONWithGSON: jsonData is not null");
         return jsonData;
     }
 

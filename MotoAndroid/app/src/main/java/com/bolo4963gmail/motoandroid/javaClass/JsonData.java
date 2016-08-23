@@ -1,8 +1,9 @@
 package com.bolo4963gmail.motoandroid.javaClass;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class JsonData {
+public class JsonData implements Serializable {
 
     /**
      * _class : hudson.model.FreeStyleBuild
@@ -26,6 +27,9 @@ public class JsonData {
      * changeSet : {"_class":"hudson.plugins.git.GitChangeSetList","items":[],"kind":"git"}
      * culprits : []
      */
+
+    public static final String SUCCESS = "SUCCESS";
+    public static final String FAILURE = "FAILURE";
 
     private String _class;
     private boolean building;
