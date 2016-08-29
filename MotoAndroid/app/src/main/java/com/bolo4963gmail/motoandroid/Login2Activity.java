@@ -1,5 +1,7 @@
 package com.bolo4963gmail.motoandroid;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.widget.Button;
@@ -28,4 +30,12 @@ public class Login2Activity extends BaseActivity {
 
 
     }
+
+    public static void startAction(Context context, String url, String projectName) {
+        Intent intent = new Intent(context, Login2Activity.class);
+        intent.putExtra("url", url);
+        intent.putExtra("projectName", projectName);
+        context.startActivity(intent);
+    }
+
 }
