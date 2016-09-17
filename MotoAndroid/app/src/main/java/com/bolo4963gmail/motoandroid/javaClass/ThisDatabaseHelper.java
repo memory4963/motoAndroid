@@ -1,11 +1,10 @@
 package com.bolo4963gmail.motoandroid.javaClass;
 
-import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.bolo4963gmail.motoandroid.MainActivity;
+import com.bolo4963gmail.motoandroid.App;
 
 /**
  * Created by 10733 on 2016/8/3.
@@ -14,54 +13,67 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "ThisDatabaseHelper";
 
-    private String createTable = "";
+    private static final String ORIGINAL_DATABASE = "MotoAndroid.db";
 
-    private Context mContext;
+    public static final String SERVER_NAMES_TABLE = "ServerName";
+    public static final String PROJECT_NAMES_TABLE = "ProjectName";
+    public static final String RESULT_TABLE = "Result";
 
-    public ThisDatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version, String tableName) {
-        super(context, name, factory, version);
-        setNewTableName(tableName);
-        mContext = context;
+    private static final int DB_VERSION = 1;
+
+    private SQLiteDatabase db;
+
+    private ThisDatabaseHelper() {
+        super(App.getContext(), ORIGINAL_DATABASE, null, DB_VERSION);
         Log.d(TAG, "ThisDatabaseHelper: ThisDatabaseHelper has created");
+        db = getWritableDatabase();
     }
 
-    public ThisDatabaseHelper(Context context,
-                              String name,
-                              SQLiteDatabase.CursorFactory factory,
-                              int version,
-                              String tableName,
-                              boolean truth) {
+    public static ThisDatabaseHelper getDatabaseHelper() {
+        if (DBHelperController.thisDatabaseHelper == null) {
+            DBHelperController.thisDatabaseHelper = new ThisDatabaseHelper();
+        }
+        return DBHelperController.thisDatabaseHelper;
+    }
 
-        super(context, name, factory, version);
-        mContext = context;
-        createTable = tableName;
-        Log.d(TAG, "ThisDatabaseHelper: ThisDatabaseHelper has created");
+    private static class DBHelperController {
+
+        private static ThisDatabaseHelper thisDatabaseHelper = null;
+
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(createTable);
-        if (createTable.equals(
-                "create table if not exists AddressName ("
-                        + "id integer primary key autoincrement, "
-                        + "address text)")) {
-            MainActivity.ifFirstTime = true;
-            Log.d(TAG, "onCreate: OK");
-        } else {
-            Log.d(TAG, "onCreate: createTable : " + createTable);
-        }
-    }
-
-    public void setNewTableName(String name) {
-        createTable = "create table if not exists " + name + " ("
-                + "id integer  , "
-                + "result integer, "
-                + "address text, "
-                + "project_name text)";
+        createServerNameTable(db);
+        createProjectNameTale(db);
+        createResultTable(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+    }
+
+    /**
+     * creates ServerName table which contents two things: id and server
+     */
+    public void createServerNameTable(SQLiteDatabase db) {
+        db.execSQL("create table if not exists " + SERVER_NAMES_TABLE + " ("
+                           + "id integer primary key autoincrement, " + "server text)");
+    }
+
+    /**
+     * creates ProjectName table which contents three things: id and project and serverId
+     */
+    public void createProjectNameTale(SQLiteDatabase db) {
+        db.execSQL("create table if not exists " + PROJECT_NAMES_TABLE + "("
+                           + "id integer primary key autoincrement, " + "project text, "
+                           + "serverId integer)");
+    }
+
+    public void createResultTable(SQLiteDatabase db) {
+        db.execSQL("create table if not exists " + RESULT_TABLE + "("
+                           + "id integer primary key autoincrement, " + "result integer, "
+                           + "projectId integer)");
     }
 }

@@ -46,8 +46,6 @@
 
         </RelativeLayout>
 
-
-
     </android.support.v7.widget.Toolbar>
 
     <RelativeLayout
@@ -68,7 +66,8 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true">
 
-            <TableRow>
+            <TableRow android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
 
                 <EditText
                     android:id="@+id/server_address"
@@ -80,7 +79,8 @@
 
             </TableRow>
 
-            <TableRow>
+            <TableRow android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
 
                 <EditText
                     android:id="@+id/project_name"

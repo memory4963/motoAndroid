@@ -11,42 +11,55 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
-import com.bolo4963gmail.motoandroid.javaClass.Connection;
 import com.bolo4963gmail.motoandroid.javaClass.JsonData;
+import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
 import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import okhttp3.Response;
+
 public class MainActivity extends BaseActivity {
 
-    public static final int UPDATE_TEXT = 1;
+    private static final int UPDATE_TEXT = 1;
 
     private static final String TAG = "MainActivity";
 
-    public static boolean ifFirstTime;
+    private SQLiteDatabase db;
 
-    List<Map<String, Object>> viewData;
+    List<Map<String, Object>> viewDataList;
 
-    private boolean ifNew = true;
+    @BindView(R.id.toolbar) Toolbar toolbar;
+    @BindView(R.id.list_view) ListView listView;
 
-    ListView listView;
+    String server;
+    String project;
+    String cookie;
 
     private Handler handler = new Handler() {
 
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UPDATE_TEXT:
-                    listView.setAdapter(new ArrayAdapter<>(MainActivity.this,
-                                                                              R.layout.list_view,
-                                                                              viewData));
+                    listView.setAdapter(
+                            new SimpleAdapter(MainActivity.this, viewDataList, R.layout.list_view,
+                                              new String[]{
+                                                      "list_id", "list_project", "list_server",
+                                                      "list_result"
+                                              }, new int[]{
+                                    R.id.list_id, R.id.list_project, R.id.list_server,
+                                    R.id.list_result
+                            }));
+                    break;
                 default:
                     break;
             }
@@ -54,51 +67,67 @@ public class MainActivity extends BaseActivity {
 
     };
 
+    private static final String KEY_URL_STRING = "urlstr";
+    private static final String KEY_PROJECT_NAME = "project";
+    private static final String KEY_COOKIE = "cookie";
+
+    public static void start(Context context, String urlstr, String projectName, String cookie) {
+        Intent starter = new Intent(context, MainActivity.class);
+        starter.putExtra(KEY_URL_STRING, urlstr);
+        starter.putExtra(KEY_PROJECT_NAME, projectName);
+        starter.putExtra(KEY_COOKIE, cookie);
+        context.startActivity(starter);
+    }
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
-        listView = (ListView) findViewById(R.id.list_view);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        if (ifFirstTime) {
-            ifFirstTime = false;
+        ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();
+        db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.rawQuery("select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE,
+                                    new String[]{});
+        if (cursor.getCount() < 1) {
             Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);//第一次打开APP时启动LoginActivity
+            startActivity(intent);
             finish();
         }
+        cursor.close();
 
         Intent intent = getIntent();
 
-        if ((intent.getStringExtra("urlStr") != null) && (intent.getStringExtra("projectName")
-                != null)) {//服务器名和项目名同时存在
-
-            String urlStr = intent.getStringExtra("urlStr");
-            String projectName = intent.getStringExtra("projectName");
-            ThisDatabaseHelper dbHelper =
-                    new ThisDatabaseHelper(MainActivity.this, "motoAndroid.db",
-                                           null, 1, "AddressName");
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            Cursor cursor = db.rawQuery("select id from AddressName where address = ?",
-                                        new String[]{urlStr});
-            Integer num = 0;
-            if (cursor.moveToFirst())
-                num = cursor.getInt(cursor.getColumnIndex("id"));
-            cursor.close();
-
-            pullData(num, projectName, urlStr);
-
-        } else if ((intent.getStringExtra("urlStr") == null) && (
-                intent.getStringExtra("projectName") != null)) {//服务器地址不存在
-            Toast.makeText(this, "请在设置中输入服务器地址", Toast.LENGTH_SHORT).show();
-        } else if ((intent.getStringExtra("urlStr") != null) && (
-                intent.getStringExtra("projectName") == null)) {//项目名不存在
-            Toast.makeText(this, "请在设置中输入项目名称", Toast.LENGTH_SHORT).show();
+        if (intent.getStringExtra(KEY_COOKIE) != null) {
+            cookie = intent.getStringExtra(KEY_COOKIE);
         }
 
+        if ((intent.getStringExtra(KEY_URL_STRING) != null) && (
+                intent.getStringExtra(KEY_PROJECT_NAME) != null)) {//服务器名和项目名同时存在
 
+            server = intent.getStringExtra(KEY_URL_STRING);
+            project = intent.getStringExtra(KEY_PROJECT_NAME);
+
+            cursor = db.rawQuery(
+                    "select id from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
+                    new String[]{server});
+            int serverId = 0;
+            if (cursor.moveToFirst()) {
+                serverId = cursor.getInt(cursor.getColumnIndex("id"));
+            }
+            Log.d(TAG, "onCreate: serverId = " + serverId);
+            cursor.close();
+
+            pullData(serverId);
+
+        } else if ((intent.getStringExtra(KEY_URL_STRING) == null) && (
+                intent.getStringExtra(KEY_PROJECT_NAME) != null)) {//服务器地址不存在
+            Toast.makeText(this, "请在设置中输入服务器地址", Toast.LENGTH_SHORT).show();
+        } else if ((intent.getStringExtra(KEY_URL_STRING) != null) && (
+                intent.getStringExtra(KEY_PROJECT_NAME) == null)) {//项目名不存在
+            Toast.makeText(this, "请在设置中输入项目名称", Toast.LENGTH_SHORT).show();
+        }
 
     }
 
@@ -129,54 +158,86 @@ public class MainActivity extends BaseActivity {
         startActivity(intent);
     }
 
-    private void pullData(final Integer num, final String projectName, final String urlStr) {
+    private void pullData(int num) {
 
-        viewData = new ArrayList<>();
+        viewDataList = new ArrayList<>();
 
-        ThisDatabaseHelper UserHelper = new ThisDatabaseHelper(MainActivity.this,
-                                                               "Database"
-                                                                       + num.toString()
-                                                                       + ".db",
-                                                               null, 1,
-                                                               projectName);
-        final SQLiteDatabase UserDb = UserHelper.getWritableDatabase();
-        Cursor checkCursor = UserDb.rawQuery("select * from " + projectName, null);
+        Integer serverId = num;
+        Cursor cursor = db.rawQuery("select id from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                                            + " where serverId = ? and project = ?",
+                                    new String[]{serverId.toString(), project});
+        /**
+         * check if the project has been added in the table
+         */
+        if (cursor.getCount() < 1) {
+            cursor.close();
+            db.execSQL("insert into " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                               + "(project, serverId) values(?, ?)",
+                       new String[]{project, serverId.toString()});
+            cursor = db.rawQuery("select id from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                                         + " where serverId = ? and project = ?",
+                                 new String[]{serverId.toString(), project});
+        }
 
-        int i1 = 1;
-        if (checkCursor.getCount() > 0) {
-            checkCursor.moveToLast();
-            i1 = checkCursor.getInt(checkCursor.getColumnIndex("id"));
-            ifNew = false;
-            for (int j = 1; j < i1; j++) {
-                Integer k = j;
-                Cursor oldData = UserDb.rawQuery("select * from " + projectName + " whrere id = ?",
-                                                 new String[]{k.toString()});
-                addData(oldData);
+        /**
+         * get project's id
+         */
+        final Integer projectId;
+        if (cursor.moveToFirst()) {
+            projectId = cursor.getInt(cursor.getColumnIndex("id"));
+        } else {
+            projectId = -1;
+        }
+        cursor.close();
+
+        /**
+         * get data from result table
+         */
+        cursor = db.rawQuery(
+                "select result from " + ThisDatabaseHelper.RESULT_TABLE + " where projectId = ?",
+                new String[]{projectId.toString()});
+
+        /**
+         * add data to listView if it has data
+         */
+        int idNow = 1;
+        if (cursor.getCount() > 0) {
+            for (int i = 1; ; i++) {
+                addData(cursor, i);
+                if (!cursor.moveToNext()) {
+                    idNow = i;
+                    break;
+                }
             }
         }
 
-        checkCursor.close();
-
-        final int i2 = i1;
-
+        /**
+         * pull data from server and add data to listView
+         */
+        final int finalIdNow = idNow;
         new Thread(new Runnable() {
 
             @Override
             public void run() {
 
-                Integer i = i2;
+                Integer id = finalIdNow;
 
                 while (true) {
-                    URL Address = Connection.SpliceURL(projectName, i, urlStr);
-                    JsonData jsonData = Connection.connecting(Address);
-                    if (jsonData == null && i == 1) {
-                        LoginWebViewActivity.startAction(MainActivity.this, urlStr, projectName,
-                                                         true);
+
+                    if (id == 40) {
+                        break;
+                    }
+                    Response response = OkHttpConnection.GETconnecting(
+                            OkHttpConnection.SpliceGetUrl(project, id, server), cookie);
+                    JsonData jsonData = OkHttpConnection.setJsonDataFromResponse(response);
+
+                    if (jsonData == null && id == 1) {
+                        // TODO: 2016/9/1 connect again
                         finish();
                     } else if (jsonData == null) {
                         break;
                     } else {
-                        Integer result = null;
+                        Integer result = -1;
                         switch (jsonData.getResult()) {
                             case JsonData.SUCCESS:
                                 result = 1;
@@ -189,18 +250,12 @@ public class MainActivity extends BaseActivity {
                                 break;
                         }
 
-                        UserDb.execSQL("insert into " + projectName
-                                               + " (id, result, address, project_name) values(?, ?, ?, ?)",
-                                       new String[]{
-                                               num.toString(), result.toString(), urlStr,
-                                               projectName
-                                       });
-                        Cursor cursor =
-                                UserDb.rawQuery("select * from " + projectName + " where id = ?",
-                                                new String[]{num.toString()});
-                        addData(cursor);
-
-                        i++;
+                        db.execSQL("insert into " + ThisDatabaseHelper.RESULT_TABLE
+                                           + " (result, projectId) values(?, ?)", new String[]{
+                                result.toString(), projectId.toString()
+                        });
+                        addData(result, id);
+                        id++;
                     }
                 }
 
@@ -209,12 +264,33 @@ public class MainActivity extends BaseActivity {
 
     }
 
-    private void addData(Cursor cursor) {
+    private void addData(int result, int id) {
         Map<String, Object> map = new HashMap<>();
 
-        map.put("list_id", cursor.getInt(cursor.getColumnIndex("id")));
-        map.put("list_address", cursor.getString(cursor.getColumnIndex("address")));
-        map.put("list_text_name", cursor.getString(cursor.getColumnIndex("project_name")));
+        map.put("list_id", id);
+        map.put("list_project", project);
+        map.put("list_server", server);
+
+        if (result == 1) {
+            map.put("list_result", R.mipmap.result_y);
+        } else if (result == 0) {
+            map.put("list_result", R.mipmap.result_n);
+        } else {
+            map.put("list_result", R.mipmap.ic_launcher);
+        }
+
+        viewDataList.add(map);
+        Message message = new Message();
+        message.what = UPDATE_TEXT;
+        handler.sendMessage(message);
+    }
+
+    private void addData(Cursor cursor, int id) {
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("list_id", id);
+        map.put("list_project", project);
+        map.put("list_server", server);
 
         if (cursor.getInt(cursor.getColumnIndex("result")) == 1) {
             map.put("list_result", R.mipmap.result_y);
@@ -224,16 +300,9 @@ public class MainActivity extends BaseActivity {
             map.put("list_result", R.mipmap.ic_launcher);
         }
 
-        viewData.add(map);
+        viewDataList.add(map);
         Message message = new Message();
         message.what = UPDATE_TEXT;
         handler.sendMessage(message);
-    }
-
-    public static void startAction(Context context, String urlStr, String projectName) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.putExtra("urlStr", urlStr);
-        intent.putExtra("projectName", projectName);
-        context.startActivity(intent);
     }
 }

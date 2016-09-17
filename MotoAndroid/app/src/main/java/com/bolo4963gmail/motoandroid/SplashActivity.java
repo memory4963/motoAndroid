@@ -1,7 +1,6 @@
 package com.bolo4963gmail.motoandroid;
 
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -24,15 +23,15 @@ public class SplashActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(layout_splash);
-        Intent intent = new Intent(SplashActivity.this, MainActivity.class);
         if (!ifBackPressed) {
-            Log.d(TAG, "onCreate: mainactivity has started");
-            dbHelper = new ThisDatabaseHelper(this, "MotoAndroid.db", null, 1,
-                                              "create table if not exists AddressName ("
-                                                      + "id integer primary key autoincrement, "
-                                                      + "address text)", true);
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.execSQL("insert into AddressName (address) values(?)", new String[]{"default"});
+            Log.d(TAG, "onCreate: mainActivity has started");
+
+            /**
+             * create database
+             */
+//            ThisDatabaseHelper.getDatabaseHelper();
+
+            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
             startActivity(intent);
         }
         finish();

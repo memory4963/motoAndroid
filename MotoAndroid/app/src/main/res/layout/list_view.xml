@@ -15,14 +15,15 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/list_text_name"
-            android:textSize="22sp"
+            android:id="@+id/list_project"
+            android:textSize="24sp"
             android:layout_margin="4dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
         <TextView
-            android:id="@+id/list_address"
+            android:id="@+id/list_server"
+            android:textSize="12sp"
             android:layout_margin="4dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
