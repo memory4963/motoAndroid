@@ -5,35 +5,35 @@
     android:orientation="horizontal">
 
     <TextView
-    android:id="@+id/list_id"
-    android:layout_width="24dp"
-    android:layout_height="wrap_content"/>
+        android:id="@+id/list_id"
+        android:layout_width="48dp"
+        android:layout_height="36dp"
+        android:layout_margin="4dp"
+        android:layout_marginLeft="16dp"
+        android:textSize="16sp"
+        android:gravity="center"/>
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+    <TextView
+        android:id="@+id/list_server"
+        android:layout_width="100dp"
+        android:layout_height="36dp"
+        android:layout_margin="4dp"
+        android:textSize="16sp"
+        android:gravity="center"/>
 
-        <TextView
-            android:id="@+id/list_project"
-            android:textSize="24sp"
-            android:layout_margin="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/list_server"
-            android:textSize="12sp"
-            android:layout_margin="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-    </LinearLayout>
+    <TextView
+        android:id="@+id/list_project"
+        android:layout_width="100dp"
+        android:layout_height="36dp"
+        android:layout_margin="4dp"
+        android:textSize="16sp"
+        android:gravity="center"/>
 
     <ImageView
+        android:layout_marginRight="16dp"
         android:id="@+id/list_result"
-        android:layout_margin="4dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_width="24dp"
+        android:layout_height="36dp"
+        android:layout_margin="4dp"/>
 
 </LinearLayout>

@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.bolo4963gmail.motoandroid"
-        minSdkVersion 14
+        minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"

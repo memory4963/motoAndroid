@@ -10,9 +10,9 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.Toast;
 
@@ -35,8 +35,7 @@ public class Login2Activity extends BaseActivity {
 
     public static final int START_MAIN_ACTIVITY = 1;
 
-    @BindView(R.id.login_back2) ImageView loginBack2;
-    @BindView(R.id.toolbar2) Toolbar toolbar2;
+    @BindView(R.id.login2_toolbar) Toolbar toolbar2;
     @BindView(R.id.account) EditText account;
     @BindView(R.id.password) EditText password;
     @BindView(R.id.login_table2) TableLayout loginTable2;
@@ -78,6 +77,14 @@ public class Login2Activity extends BaseActivity {
         setContentView(R.layout.activity_login2);
         ButterKnife.bind(this);
 
+        toolbar2.setNavigationIcon(R.mipmap.back);
+        toolbar2.setNavigationOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
         // TODO: 2016/9/5 delete these two lines when the project is completed
         account.setText("memory4963");
         password.setText("456rtyFGHvbn");
@@ -127,11 +134,6 @@ public class Login2Activity extends BaseActivity {
                 }
             }
         }).start();
-    }
-
-    @OnClick(R.id.login_back2)
-    public void OnclickLoginBack2() {
-        finish();
     }
 
     @Override

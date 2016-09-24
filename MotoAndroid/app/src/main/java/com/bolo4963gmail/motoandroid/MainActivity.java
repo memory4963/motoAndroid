@@ -11,8 +11,10 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.bolo4963gmail.motoandroid.javaClass.JsonData;
@@ -20,6 +22,7 @@ import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
 import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,9 +40,13 @@ public class MainActivity extends BaseActivity {
     private SQLiteDatabase db;
 
     List<Map<String, Object>> viewDataList;
+    List<String> serverSpinnerString;
+    List<String> projectSpinnerString;
 
     @BindView(R.id.toolbar) Toolbar toolbar;
     @BindView(R.id.list_view) ListView listView;
+    @BindView(R.id.server_spinner) Spinner serverSpinner;
+    @BindView(R.id.project_spinner) Spinner projectSpinner;
 
     String server;
     String project;
@@ -50,6 +57,7 @@ public class MainActivity extends BaseActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UPDATE_TEXT:
+                    Collections.reverse(viewDataList);
                     listView.setAdapter(
                             new SimpleAdapter(MainActivity.this, viewDataList, R.layout.list_view,
                                               new String[]{
@@ -59,6 +67,7 @@ public class MainActivity extends BaseActivity {
                                     R.id.list_id, R.id.list_project, R.id.list_server,
                                     R.id.list_result
                             }));
+                    Collections.reverse(viewDataList);
                     break;
                 default:
                     break;
@@ -86,16 +95,47 @@ public class MainActivity extends BaseActivity {
 
         setSupportActionBar(toolbar);
 
+        //get database
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();
         db = dbHelper.getWritableDatabase();
         Cursor cursor = db.rawQuery("select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE,
                                     new String[]{});
-        if (cursor.getCount() < 1) {
+
+        if (!cursor.moveToFirst()) {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
             finish();
         }
-        cursor.close();
+
+        //set serverSpinnerString and serverSpinnerAdapter
+        if (cursor.moveToFirst()) {
+            serverSpinnerString = new ArrayList<>();
+            do {
+                serverSpinnerString.add(cursor.getString(cursor.getColumnIndex("server")));
+            } while (cursor.moveToNext());
+            cursor.close();
+            ArrayAdapter<String> serverSpinnerAdapter =
+                    new ArrayAdapter<>(this, R.layout.spinner_text_view, serverSpinnerString);
+            serverSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+            serverSpinner.setAdapter(serverSpinnerAdapter);
+        }
+
+        //set projectSpinnerString and serverSpinnerAdapter
+        cursor = db.rawQuery(
+                "select * from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE + " where serverId = ?",
+                new String[]{serverSpinnerString.get(0)});
+        if (cursor.moveToFirst()) {
+            projectSpinnerString = new ArrayList<>();
+            do {
+                projectSpinnerString.add(cursor.getString(cursor.getColumnIndex("project")));
+            } while (cursor.moveToNext());
+            cursor.close();
+            ArrayAdapter<String> projectSpinnerAdapter =
+                    new ArrayAdapter<>(this, R.layout.spinner_text_view,
+                                             projectSpinnerString);
+            projectSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+            projectSpinner.setAdapter(projectSpinnerAdapter);
+        }
 
         Intent intent = getIntent();
 
@@ -112,7 +152,7 @@ public class MainActivity extends BaseActivity {
             cursor = db.rawQuery(
                     "select id from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
                     new String[]{server});
-            int serverId = 0;
+            int serverId = -1;
             if (cursor.moveToFirst()) {
                 serverId = cursor.getInt(cursor.getColumnIndex("id"));
             }
@@ -127,6 +167,8 @@ public class MainActivity extends BaseActivity {
         } else if ((intent.getStringExtra(KEY_URL_STRING) != null) && (
                 intent.getStringExtra(KEY_PROJECT_NAME) == null)) {//项目名不存在
             Toast.makeText(this, "请在设置中输入项目名称", Toast.LENGTH_SHORT).show();
+        } else {
+            // TODO: 2016/9/21  
         }
 
     }
@@ -169,7 +211,7 @@ public class MainActivity extends BaseActivity {
         /**
          * check if the project has been added in the table
          */
-        if (cursor.getCount() < 1) {
+        if (!cursor.moveToFirst()) {
             cursor.close();
             db.execSQL("insert into " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
                                + "(project, serverId) values(?, ?)",
@@ -201,11 +243,13 @@ public class MainActivity extends BaseActivity {
          * add data to listView if it has data
          */
         int idNow = 1;
-        if (cursor.getCount() > 0) {
+        if (cursor.moveToFirst()) {
             for (int i = 1; ; i++) {
-                addData(cursor, i);
+                addData(cursor.getInt(cursor.getColumnIndex("result")), i);
+                Log.d(TAG, "pullData: getting data from database");
                 if (!cursor.moveToNext()) {
                     idNow = i;
+                    Log.d(TAG, "pullData: got data from database");
                     break;
                 }
             }

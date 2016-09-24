@@ -11,7 +11,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
@@ -26,7 +25,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class LoginActivity extends BaseActivity{
+public class LoginActivity extends BaseActivity {
 
     private static final String TAG = "LoginActivity";
 
@@ -35,10 +34,11 @@ public class LoginActivity extends BaseActivity{
     private ProgressDialog progressDialog = null;
     public static final int START_LOGIN2ACTIVITY = 1;
 
-    @BindView(R.id.login_back) ImageView loginBack;
+    //    @BindView(R.id.login_back) Button loginBack;
     @BindView(R.id.server_address) EditText address;
     @BindView(R.id.project_name) EditText projectName;
     @BindView(R.id.login_connect_button) Button connectButton;
+    @BindView(R.id.login_toolbar) android.support.v7.widget.Toolbar toolbar;
 
     private Handler handler = new Handler() {
 
@@ -61,15 +61,8 @@ public class LoginActivity extends BaseActivity{
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
 
-        ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();//获得APP自带数据库
-        db = dbHelper.getWritableDatabase();
-
-        // TODO: 2016/9/5 delete these two lines when the project is completed
-        address.setText("115.29.114.77");
-        projectName.setText("testOne");
-
-
-        loginBack.setOnClickListener(new View.OnClickListener() {
+        toolbar.setNavigationIcon(R.mipmap.back);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -78,6 +71,24 @@ public class LoginActivity extends BaseActivity{
                 finish();
             }
         });
+
+        ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();//获得APP自带数据库
+        db = dbHelper.getWritableDatabase();
+
+        // TODO: 2016/9/5 delete these two lines when the project is completed
+        address.setText("115.29.114.77");
+        projectName.setText("testOne");
+
+
+//        loginBack.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+//                startActivity(intent);
+//                finish();
+//            }
+//        });
 
     }
 
@@ -89,6 +100,7 @@ public class LoginActivity extends BaseActivity{
             return;
         }
 
+        //add this server to the database
         try {
             db.execSQL(
                     "insert into " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " (server) values(?)",

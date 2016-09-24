@@ -29,7 +29,7 @@ public class SplashActivity extends BaseActivity {
             /**
              * create database
              */
-//            ThisDatabaseHelper.getDatabaseHelper();
+            ThisDatabaseHelper.getDatabaseHelper();
 
             Intent intent = new Intent(SplashActivity.this, MainActivity.class);
             startActivity(intent);

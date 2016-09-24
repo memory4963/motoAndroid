@@ -8,16 +8,18 @@
     android:orientation="vertical">
 
     <android.support.v7.widget.Toolbar
+        android:id="@+id/login2_toolbar"
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/toolbar2"
         android:layout_width="match_parent"
         android:layout_height="78dp"
         android:background="@color/primary_color"
-        android:minHeight="?attr/actionBarSize"
         android:fitsSystemWindows="true"
+        android:minHeight="?attr/actionBarSize"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+        android:elevation="2dp"
+        android:translationZ="4dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -27,14 +29,6 @@
             android:layout_alignParentStart="true"
             android:paddingRight="12dp"
             android:layout_marginEnd="20dp">
-
-            <ImageView
-                android:id="@+id/login_back2"
-                android:clickable="true"
-                android:src="@mipmap/back"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -101,13 +95,15 @@
             android:text="登录"
             android:textSize="24sp"
             android:textColor="#ffffff"
-            android:background="@mipmap/connect_button_background"
+            android:background="@drawable/login_button_shape"
             android:layout_below="@+id/login_table2"
             android:layout_marginTop="28dp"
             android:layout_alignLeft="@+id/login_table2"
             android:layout_alignStart="@+id/login_table2"
             android:layout_alignRight="@+id/login_table2"
-            android:layout_alignEnd="@+id/login_table2"/>
+            android:layout_alignEnd="@+id/login_table2"
+            android:elevation="2dp"
+            android:translationZ="2dp"/>
 
     </RelativeLayout>
 
