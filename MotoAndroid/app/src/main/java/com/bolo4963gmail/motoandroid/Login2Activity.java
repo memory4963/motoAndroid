@@ -3,6 +3,8 @@ package com.bolo4963gmail.motoandroid;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -17,6 +19,7 @@ import android.widget.TableLayout;
 import android.widget.Toast;
 
 import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
+import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +45,9 @@ public class Login2Activity extends BaseActivity {
     @BindView(R.id.login_button) Button loginButton;
 
     private ProgressDialog progressDialog = null;
+    private SQLiteDatabase db = null;
 
-    String url;
+    String server;
     String projectName;
     String cookie;
 
@@ -61,9 +65,7 @@ public class Login2Activity extends BaseActivity {
 
     };
 
-    public static void start(Context context,
-                             String url,
-                             String projectName) {
+    public static void start(Context context, String url, String projectName) {
 
         Intent starter = new Intent(context, Login2Activity.class);
         starter.putExtra(KEY_URL, url);
@@ -77,20 +79,23 @@ public class Login2Activity extends BaseActivity {
         setContentView(R.layout.activity_login2);
         ButterKnife.bind(this);
 
+        ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();
+        db = dbHelper.getWritableDatabase();
+
         toolbar2.setNavigationIcon(R.mipmap.back);
-        toolbar2.setNavigationOnClickListener(new View.OnClickListener(){
+        toolbar2.setNavigationOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 finish();
             }
         });
-        // TODO: 2016/9/5 delete these two lines when the project is completed
+        // TODO: 2016/9/5 项目完成后删掉
         account.setText("memory4963");
         password.setText("456rtyFGHvbn");
 
         Intent intent = getIntent();
-        url = intent.getStringExtra("url");
+        server = intent.getStringExtra("url");
         projectName = intent.getStringExtra("project");
 
     }
@@ -106,6 +111,22 @@ public class Login2Activity extends BaseActivity {
             return;
         }
 
+        /**
+         * save the account and password
+         */
+        Cursor cursor = db.rawQuery(
+                "select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
+                new String[]{server});
+        Integer serverId = -1;
+        if (cursor.moveToFirst()) {
+            serverId = cursor.getInt(cursor.getColumnIndex("id"));
+        }
+        cursor.close();
+        db.execSQL("insert into " + ThisDatabaseHelper.ACCOUNT_TABLE
+                           + "(account, password, serverId, cookie) values(?,?,?,?)", new String[]{
+                account.getText().toString(), password.getText().toString(), serverId.toString(), ""
+        });
+
         progressDialog = new ProgressDialog(Login2Activity.this);
         progressDialog.setTitle("正在连接");
         progressDialog.setMessage("请稍候");
@@ -119,7 +140,8 @@ public class Login2Activity extends BaseActivity {
                 list.add(account.getText().toString());
                 list.add(password.getText().toString());
                 Response response =
-                        OkHttpConnection.POSTconnection(OkHttpConnection.SpliceLoginUrl(url), list);
+                        OkHttpConnection.POSTconnection(OkHttpConnection.SpliceLoginUrl(server),
+                                                        list);
                 if (response.code() == 302) {
                     try {
                         setCookie(response);
@@ -143,14 +165,26 @@ public class Login2Activity extends BaseActivity {
 
     private void setCookie(Response response) throws NullPointerException {
         cookie = response.header("Set-Cookie");
+        Cursor cursor = db.rawQuery(
+                "select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
+                new String[]{server});
+        Integer serverId = -1;
+        if (cursor.moveToFirst()) {
+            serverId = cursor.getInt(cursor.getColumnIndex("id"));
+        }
+        cursor.close();
+
         if (cookie == null) {
             throw new NullPointerException("cookie is null");
         }
+        db.execSQL(
+                "update " + ThisDatabaseHelper.ACCOUNT_TABLE + " set cookie = ? where serverId = ?",
+                new String[]{cookie, serverId.toString()});
     }
 
     private void StartMainActivity() {
         progressDialog.dismiss();
-        MainActivity.start(Login2Activity.this, url, projectName, cookie);
+        MainActivity.start(Login2Activity.this, server, projectName, cookie);
         finish();
     }
 

@@ -18,7 +18,7 @@
         android:fitsSystemWindows="true"
         android:minHeight="?attr/actionBarSize"
         android:paddingTop="@dimen/toolbar_padding_top"
-        android:translationZ="4dp"
+        android:translationZ="12dp"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
@@ -44,13 +44,45 @@
 
         </RelativeLayout>
 
-
-
     </android.support.v7.widget.Toolbar>
 
-    <ListView
-        android:id="@+id/list_view"
+    <!--<android.support.design.widget.TabLayout-->
+        <!--android:id="@+id/main_activity_tab_layout"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"/>-->
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/main_activity_view_pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#ffffffff"/>
+
+
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ListView
+            android:id="@+id/list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <!--<Button-->
+    <!--android:id="@+id/right_bottom_button"-->
+    <!--android:layout_width="72dp"-->
+    <!--android:layout_height="72dp"-->
+    <!--android:layout_alignParentBottom="true"-->
+    <!--android:layout_alignParentEnd="true"-->
+    <!--android:background="@drawable/right_bottom_button_shape"-->
+    <!--android:layout_marginEnd="24dp"-->
+    <!--android:layout_marginBottom="24dp"-->
+    <!--android:elevation="2dp"-->
+    <!--android:translationZ="20dp"/>-->
+
+
 
 </LinearLayout>

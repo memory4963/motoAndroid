@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/setting_button"
-        android:icon="@mipmap/settings"
-        android:title="settings"
+        android:id="@+id/setting_mult_selector"
+        android:icon="@drawable/mult_selector"
+        android:title="muti select"
         app:showAsAction="ifRoom"/>
 
 </menu>

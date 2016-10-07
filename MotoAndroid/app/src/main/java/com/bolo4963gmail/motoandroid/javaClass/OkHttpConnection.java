@@ -149,7 +149,7 @@ public class OkHttpConnection {
         }
     }
 
-    public static JsonData setJsonDataFromResponse(Response response) {
+    public static JsonData setJsonDataFromResponse(Response response) throws Exception {
         Gson gson = new Gson();
         return gson.fromJson(response.body().charStream(), JsonData.class);
     }

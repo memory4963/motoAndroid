@@ -18,6 +18,7 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
     public static final String SERVER_NAMES_TABLE = "ServerName";
     public static final String PROJECT_NAMES_TABLE = "ProjectName";
     public static final String RESULT_TABLE = "Result";
+    public static final String ACCOUNT_TABLE = "Account";
 
     private static final int DB_VERSION = 1;
 
@@ -45,8 +46,9 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         createServerNameTable(db);
-        createProjectNameTale(db);
+        createProjectNameTable(db);
         createResultTable(db);
+        createAccountTable(db);
     }
 
     @Override
@@ -57,7 +59,7 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
     /**
      * creates ServerName table which contents two things: id and server
      */
-    public void createServerNameTable(SQLiteDatabase db) {
+    private void createServerNameTable(SQLiteDatabase db) {
         db.execSQL("create table if not exists " + SERVER_NAMES_TABLE + " ("
                            + "id integer primary key autoincrement, " + "server text)");
     }
@@ -65,15 +67,21 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
     /**
      * creates ProjectName table which contents three things: id and project and serverId
      */
-    public void createProjectNameTale(SQLiteDatabase db) {
+    private void createProjectNameTable(SQLiteDatabase db) {
         db.execSQL("create table if not exists " + PROJECT_NAMES_TABLE + "("
                            + "id integer primary key autoincrement, " + "project text, "
                            + "serverId integer)");
     }
 
-    public void createResultTable(SQLiteDatabase db) {
+    private void createResultTable(SQLiteDatabase db) {
         db.execSQL("create table if not exists " + RESULT_TABLE + "("
                            + "id integer primary key autoincrement, " + "result integer, "
                            + "projectId integer)");
+    }
+
+    private void createAccountTable(SQLiteDatabase db) {
+        db.execSQL("create table if not exists " + ACCOUNT_TABLE + "("
+                           + "id integer primary key autoincrement, " + "account text, "
+                           + "password text, " + "serverId integer, " + "cookie text)");
     }
 }

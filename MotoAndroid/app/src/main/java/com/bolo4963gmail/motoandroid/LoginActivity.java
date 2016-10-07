@@ -2,6 +2,7 @@ package com.bolo4963gmail.motoandroid;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
@@ -75,7 +76,7 @@ public class LoginActivity extends BaseActivity {
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();//获得APP自带数据库
         db = dbHelper.getWritableDatabase();
 
-        // TODO: 2016/9/5 delete these two lines when the project is completed
+        // TODO: 2016/9/5 项目完成后删掉
         address.setText("115.29.114.77");
         projectName.setText("testOne");
 
@@ -106,10 +107,23 @@ public class LoginActivity extends BaseActivity {
                     "insert into " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " (server) values(?)",
                     new String[]{address.getText().toString()});//向APP自带数据库中添加此服务器名称
 
+            Cursor cursor = db.rawQuery(
+                    "select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
+                    new String[]{address.getText().toString()});
+            Integer serverId = -1;
+            if (cursor.moveToFirst()) {
+                serverId = cursor.getInt(cursor.getColumnIndex("id"));
+            }
+            cursor.close();
+
             Log.d(TAG, "onClick: " + projectName.getText().toString());
 
             if (TextUtils.isEmpty(projectName.getText().toString())) {
                 Toast.makeText(LoginActivity.this, "请稍后在设置中输入项目名称", Toast.LENGTH_SHORT).show();
+            } else {
+                db.execSQL("insert into " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                                   + " (project, serverId) values (?,?)",
+                           new String[]{projectName.getText().toString(), serverId.toString()});
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -155,6 +169,11 @@ public class LoginActivity extends BaseActivity {
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
         startActivity(intent);
         finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     private void startLogin2Activity() {

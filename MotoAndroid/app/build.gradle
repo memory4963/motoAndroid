@@ -26,6 +26,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.2.1'
     compile files('libs/gson-2.3.jar')
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    compile 'com.android.support:design:23.2.1'
     compile 'com.jakewharton:butterknife:8.4.0'
     apt 'com.jakewharton:butterknife-compiler:8.4.0'
 }
