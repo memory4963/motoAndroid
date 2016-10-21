@@ -4,13 +4,17 @@ import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -146,6 +150,22 @@ public class MainActivity extends BaseActivity {
 
     };
 
+    private MotoAndroidPullDataService.MyBinder mBinder;
+    private ServiceConnection connection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mBinder = (MotoAndroidPullDataService.MyBinder) service;
+            mBinder.setActivity(MainActivity.this);
+            Log.d(TAG, "onServiceConnected: setActivity");
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -183,16 +203,22 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        Intent intent = new Intent(MainActivity.this, MotoAndroidPullDataService.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        boolean bool =
+                this.getApplicationContext().bindService(intent, connection, BIND_AUTO_CREATE);
+        Log.d(TAG, "onCreate: bindService bool = " + bool);
+        startService(intent);
+
         setSupportActionBar(toolbar);
 
         viewDataList = new ArrayList<>();
-        adapter = new SimpleAdapter(MainActivity.this, viewDataList, R.layout.list_view,
-                                    new String[]{
-                                            "list_id", "list_project", "list_server",
-                                            "list_result"
-                                    }, new int[]{
-                R.id.list_id, R.id.list_project, R.id.list_server, R.id.list_result
-        });
+        adapter =
+                new SimpleAdapter(MainActivity.this, viewDataList, R.layout.list_view, new String[]{
+                        "list_id", "list_project", "list_server", "list_result"
+                }, new int[]{
+                        R.id.list_id, R.id.list_project, R.id.list_server, R.id.list_result
+                });
         listView.setAdapter(adapter);
 
         //set swipeRefreshLayout
@@ -214,6 +240,12 @@ public class MainActivity extends BaseActivity {
         setSpinnersOnClick();
 
         setData();
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
 
     }
 
@@ -252,6 +284,13 @@ public class MainActivity extends BaseActivity {
 //        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //        intent.addCategory(Intent.CATEGORY_HOME);
 //        startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+//        mBinder.removeActivity();
+//        unbindService(connection);
     }
 
     private void setData() {
@@ -334,7 +373,7 @@ public class MainActivity extends BaseActivity {
 
             setCookie(mStartIntent);
 
-            pullData();
+//            pullData();
         }
 
     }
@@ -479,6 +518,10 @@ public class MainActivity extends BaseActivity {
 
     }
 
+    public void rePullData() {
+        pullData();
+    }
+
     private void pullData() {
 
         if (!swipeRefreshLayout.isRefreshing()) {
@@ -587,12 +630,18 @@ public class MainActivity extends BaseActivity {
                             addData(result, id);
                             id++;
 
+                            SharedPreferences sharedPreferences = getSharedPreferences(
+                                    ThisDatabaseHelper.SWITCH_SHARED_PREFERENCES, MODE_PRIVATE);
                             if (finalIdNow > 1) {
                                 testNumber = id;
-                                if (result == 1) {
+                                if (result == 1 && sharedPreferences.getBoolean(
+                                        ThisDatabaseHelper.BUILD_SUCCESS, true)) {
                                     sendMassageResult = true;
-                                } else {
+                                } else if (sharedPreferences.getBoolean(
+                                        ThisDatabaseHelper.BUILD_FAILURE, true)) {
                                     sendMassageResult = false;
+                                } else {
+                                    continue;
                                 }
                                 Message message = new Message();
                                 message.what = SEND_NOTIFICATION;
@@ -625,11 +674,17 @@ public class MainActivity extends BaseActivity {
         map.put("list_id", id);
         map.put("list_project", project);
         map.put("list_server", server);
+        SharedPreferences sharedPreferences =
+                getSharedPreferences(ThisDatabaseHelper.SWITCH_SHARED_PREFERENCES, MODE_PRIVATE);
 
-        if (result == 1) {
+
+        if (result == 1 && sharedPreferences.getBoolean(ThisDatabaseHelper.BUILD_SUCCESS, true)) {
             map.put("list_result", R.mipmap.result_y);
-        } else if (result == 0) {
+        } else if (result == 0 && sharedPreferences.getBoolean(ThisDatabaseHelper.BUILD_FAILURE,
+                                                               true)) {
             map.put("list_result", R.mipmap.result_n);
+        } else {
+            return;
         }
 
         viewDataList.add(map);
@@ -686,6 +741,12 @@ public class MainActivity extends BaseActivity {
                 cursor.close();
             }
         }
+
+        /**
+         * test if cookie is available
+         */
+
+
     }
 
     private void checkServerAndProject() {
