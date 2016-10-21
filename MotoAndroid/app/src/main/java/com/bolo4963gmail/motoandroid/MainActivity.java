@@ -81,9 +81,6 @@ public class MainActivity extends BaseActivity {
     String project;
     String cookie;
 
-    // TODO: 2016/9/30 调试完成后删掉这个变量
-    int testId = 10;
-
     Integer testNumber = -1;
     int notificationId = 0;
     boolean sendMassageResult;
@@ -289,8 +286,8 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        mBinder.removeActivity();
-//        unbindService(connection);
+        mBinder.removeActivity();
+        unbindService(connection);
     }
 
     private void setData() {

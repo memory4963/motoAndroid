@@ -93,9 +93,6 @@ public class Login2Activity extends BaseActivity {
             }
         });
         toolbar2.setTitle("持续集成系统");
-        // TODO: 2016/9/5 项目完成后删掉
-        account.setText("memory4963");
-        password.setText("456rtyFGHvbn");
 
         Intent intent = getIntent();
         server = intent.getStringExtra("url");

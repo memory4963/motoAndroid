@@ -78,10 +78,6 @@ public class LoginActivity extends BaseActivity {
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();//获得APP自带数据库
         db = dbHelper.getWritableDatabase();
 
-        // TODO: 2016/9/5 项目完成后删掉
-        address.setText("115.29.114.77");
-        projectName.setText("testOne");
-
     }
 
     @Override
