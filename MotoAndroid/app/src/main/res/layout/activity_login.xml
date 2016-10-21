@@ -29,13 +29,13 @@
             android:layout_alignParentTop="true"
             android:layout_marginEnd="20dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:text="持续集成系统"
-                android:textColor="#ffffff"
-                android:textSize="24sp"/>
+            <!--<TextView-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:layout_centerInParent="true"-->
+                <!--android:text="持续集成系统"-->
+                <!--android:textColor="#ffffff"-->
+                <!--android:textSize="24sp"/>-->
 
         </RelativeLayout>
 

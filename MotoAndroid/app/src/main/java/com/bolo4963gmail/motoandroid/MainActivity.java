@@ -12,8 +12,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,6 +27,7 @@ import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.bolo4963gmail.motoandroid.javaClass.ActivityCollector;
 import com.bolo4963gmail.motoandroid.javaClass.JsonData;
 import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
 import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
@@ -37,6 +40,7 @@ import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import okhttp3.Response;
 
 public class MainActivity extends BaseActivity {
@@ -45,23 +49,29 @@ public class MainActivity extends BaseActivity {
     private static final int SET_REFRESH_FALSE = 2;
     private static final int CONNECT_FALSE = 3;
     private static final int SEND_NOTIFICATION = 4;
+    private static final int SETTING_RESULT = 5;
 
     private static final String TAG = "MainActivity";
 
     private SQLiteDatabase db = null;
     private AlertDialog alertDialog = null;
+    private Intent mStartIntent = null;
+    private long time = 0;
 
-    List<Map<String, Object>> viewDataList;
-    List<String> serverSpinnerString;
-    List<String> projectSpinnerString;
-    String serverNow;
-    String projectNow;
+    private List<Map<String, Object>> viewDataList;
+    private List<String> serverSpinnerString;
+    private List<String> projectSpinnerString;
+    private ArrayAdapter<String> serverSpinnerAdapter;
+    private ArrayAdapter<String> projectSpinnerAdapter;
+    private String serverNow;
+    private String projectNow;
 
     @BindView(R.id.toolbar) Toolbar toolbar;
     @BindView(R.id.list_view) ListView listView;
     @BindView(R.id.server_spinner) Spinner serverSpinner;
     @BindView(R.id.project_spinner) Spinner projectSpinner;
     @BindView(R.id.swipe_refresh_layout) SwipeRefreshLayout swipeRefreshLayout;
+    @BindView(R.id.fabBtn) FloatingActionButton floatingActionButton;
 
     String server;
     String project;
@@ -74,22 +84,14 @@ public class MainActivity extends BaseActivity {
     int notificationId = 0;
     boolean sendMassageResult;
 
+    private SimpleAdapter adapter;
     private Handler handler = new Handler() {
 
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UPDATE_TEXT:
                     Collections.reverse(viewDataList);
-                    listView.setAdapter(
-                            new SimpleAdapter(MainActivity.this, viewDataList, R.layout.list_view,
-                                              new String[]{
-                                                      "list_id", "list_project", "list_server",
-                                                      "list_result"
-                                              }, new int[]{
-                                    R.id.list_id, R.id.list_project, R.id.list_server,
-                                    R.id.list_result
-                            }));
-//                    Collections.reverse(viewDataList);
+                    adapter.notifyDataSetChanged();
                     break;
                 case SET_REFRESH_FALSE:
                     swipeRefreshLayout.setRefreshing(false);
@@ -144,14 +146,30 @@ public class MainActivity extends BaseActivity {
 
     };
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case SETTING_RESULT:
+                if (resultCode == RESULT_OK) {
+                    if (data.getBooleanExtra(SettingsActivity.RESTART, true)) {
+                        checkServerAndProject();
+                    }
+                    if (data.getBooleanExtra(SettingsActivity.REFRESH, true)) {
+                        pullData();
+                    }
+                }
+                break;
+        }
+    }
+
     private static final String KEY_SERVER_NAME = "urlstr";
     private static final String KEY_PROJECT_NAME = "project";
     private static final String KEY_COOKIE = "cookie";
 
-    public static void start(Context context, String urlstr, String projectName, String cookie) {
+    public static void start(Context context, String server, String project, String cookie) {
         Intent starter = new Intent(context, MainActivity.class);
-        starter.putExtra(KEY_SERVER_NAME, urlstr);
-        starter.putExtra(KEY_PROJECT_NAME, projectName);
+        starter.putExtra(KEY_SERVER_NAME, server);
+        starter.putExtra(KEY_PROJECT_NAME, project);
         starter.putExtra(KEY_COOKIE, cookie);
         context.startActivity(starter);
     }
@@ -160,13 +178,22 @@ public class MainActivity extends BaseActivity {
     // TODO: 2016/9/27 后台服务监视
     // TODO: 2016/9/27 更新信息推送
     // TODO: 2016/9/27 接收全部结果
-    // TODO: 2016/10/6 添加add_button
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
         setSupportActionBar(toolbar);
+
+        viewDataList = new ArrayList<>();
+        adapter = new SimpleAdapter(MainActivity.this, viewDataList, R.layout.list_view,
+                                    new String[]{
+                                            "list_id", "list_project", "list_server",
+                                            "list_result"
+                                    }, new int[]{
+                R.id.list_id, R.id.list_project, R.id.list_server, R.id.list_result
+        });
+        listView.setAdapter(adapter);
 
         //set swipeRefreshLayout
         swipeRefreshLayout.setProgressViewOffset(false, -180, 48);
@@ -182,6 +209,53 @@ public class MainActivity extends BaseActivity {
             }
         });
 
+        mStartIntent = getIntent();
+
+        setSpinnersOnClick();
+
+        setData();
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.setting_button:
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivityForResult(intent, SETTING_RESULT);
+                return true;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if (time == 0 || (System.currentTimeMillis() - time > 2700)) {
+            Toast.makeText(this, "再按一次退出", Toast.LENGTH_SHORT).show();
+            time = System.currentTimeMillis();
+        } else {
+            Log.d(TAG, "onBackPressed: finishAll");
+            ActivityCollector.finishAll();
+        }
+
+//        Intent intent = new Intent(Intent.ACTION_MAIN);
+//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        intent.addCategory(Intent.CATEGORY_HOME);
+//        startActivity(intent);
+    }
+
+    private void setData() {
+
         //get database
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();
         db = dbHelper.getWritableDatabase();
@@ -193,51 +267,18 @@ public class MainActivity extends BaseActivity {
             startActivity(intent);
             finish();
             return;
-        } else {
-
-            Integer serverId = cursor.getInt(cursor.getColumnIndex("id"));
-            Log.d(TAG, "onCreate: serverId = " + serverId.toString());
-
-            //set serverSpinnerString and serverSpinnerAdapter
-            serverSpinnerString = new ArrayList<>();
-            do {
-                serverSpinnerString.add(cursor.getString(cursor.getColumnIndex("server")));
-            } while (cursor.moveToNext());
-            cursor.close();
-            ArrayAdapter<String> serverSpinnerAdapter =
-                    new ArrayAdapter<>(this, R.layout.spinner_text_view, serverSpinnerString);
-            serverSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-            serverSpinner.setAdapter(serverSpinnerAdapter);
-            serverNow = serverSpinnerString.get(0);
-
-            //set projectSpinnerString and serverSpinnerAdapter
-            cursor = db.rawQuery("select * from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
-                                         + " where serverId = ?",
-                                 new String[]{serverId.toString()});
-            if (cursor.moveToFirst()) {
-                Log.d(TAG, "onCreate: projectSpinnerString is not null");
-                projectSpinnerString = new ArrayList<>();
-                do {
-                    projectSpinnerString.add(cursor.getString(cursor.getColumnIndex("project")));
-                } while (cursor.moveToNext());
-                ArrayAdapter<String> projectSpinnerAdapter =
-                        new ArrayAdapter<>(this, R.layout.spinner_text_view, projectSpinnerString);
-                projectSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
-                projectSpinner.setAdapter(projectSpinnerAdapter);
-                projectNow = projectSpinnerString.get(0);
-            }
         }
         cursor.close();
 
-        Intent intent = getIntent();
+        resetSpinners();
 
-        if ((intent.getStringExtra(KEY_SERVER_NAME) != null) && (
-                intent.getStringExtra(KEY_PROJECT_NAME) != null)) {//服务器名和项目名同时存在
+        if ((mStartIntent.getStringExtra(KEY_SERVER_NAME) != null) && (
+                mStartIntent.getStringExtra(KEY_PROJECT_NAME) != null)) {//服务器名和项目名同时存在
 
-            server = intent.getStringExtra(KEY_SERVER_NAME);
-            project = intent.getStringExtra(KEY_PROJECT_NAME);
+            server = mStartIntent.getStringExtra(KEY_SERVER_NAME);
+            project = mStartIntent.getStringExtra(KEY_PROJECT_NAME);
 
-            setCookie(intent);
+            setCookie(mStartIntent);
 
             //set serverSpinner default
             for (int i = 0; i < serverSpinnerString.size(); i++) {
@@ -252,31 +293,20 @@ public class MainActivity extends BaseActivity {
                 for (int i = 0; i < projectSpinnerString.size(); i++) {
                     if (projectSpinnerString.get(i).equals(project)) {
                         projectSpinner.setSelection(i);
+                        Log.d(TAG, "setData: SelectedItemPosition1 = "
+                                + projectSpinner.getSelectedItemPosition());
                         break;
                     }
                 }
             }
 
-            pullData();
+//            pullData();
 
-//        } else if ((intent.getStringExtra(KEY_SERVER_NAME) == null) && (
-//                intent.getStringExtra(KEY_PROJECT_NAME) != null)) {//服务器地址不存在
-//            project = intent.getStringExtra(KEY_PROJECT_NAME);
-//
-//            //set projectSpinner default
-//            for (int i = 0; i < projectSpinnerString.size(); i++) {
-//                if (projectSpinnerString.get(i).equals(project)) {
-//                    projectSpinner.setSelection(i);
-//                    break;
-//                }
-//            }
-//
-//            Toast.makeText(this, "请在设置中输入服务器地址", Toast.LENGTH_SHORT).show();
-        } else if ((intent.getStringExtra(KEY_SERVER_NAME) != null) && (
-                intent.getStringExtra(KEY_PROJECT_NAME) == null)) {//项目名不存在
-            server = intent.getStringExtra(KEY_SERVER_NAME);
+        } else if ((mStartIntent.getStringExtra(KEY_SERVER_NAME) != null) && (
+                mStartIntent.getStringExtra(KEY_PROJECT_NAME) == null)) {//项目名不存在
+            server = mStartIntent.getStringExtra(KEY_SERVER_NAME);
 
-            setCookie(intent);
+            setCookie(mStartIntent);
 
             //set serverSpinner default
             for (int i = 0; i < serverSpinnerString.size(); i++) {
@@ -286,18 +316,83 @@ public class MainActivity extends BaseActivity {
                 }
             }
 
-            Toast.makeText(this, "请在设置中输入项目名称", Toast.LENGTH_SHORT).show();
+            if (!(projectSpinner.getCount() < 1)) {
+                project = projectSpinner.getSelectedItem().toString();
+
+                setCookie(mStartIntent);
+
+                pullData();
+
+            } else {
+                Toast.makeText(this, "请在设置中输入项目名称", Toast.LENGTH_SHORT).show();
+            }
         } else {
 
             //get default spinner's item
             server = serverSpinner.getSelectedItem().toString();
             project = projectSpinner.getSelectedItem().toString();
 
-            setCookie(intent);
+            setCookie(mStartIntent);
 
             pullData();
         }
 
+    }
+
+    private void resetSpinners() {
+
+        Cursor cursor = db.rawQuery("select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE,
+                                    new String[]{});
+        cursor.moveToFirst();
+
+        Integer serverId = -1;
+
+        do {
+            if (mStartIntent.getStringExtra(KEY_SERVER_NAME) != null && mStartIntent.getStringExtra(
+                    KEY_SERVER_NAME).equals(cursor.getString(cursor.getColumnIndex("server")))) {
+                serverId = cursor.getInt(cursor.getColumnIndex("id"));
+                break;
+            }
+        } while (cursor.moveToNext());
+
+        cursor.moveToFirst();
+        if (serverId == -1) {
+            serverId = cursor.getInt(cursor.getColumnIndex("id"));
+        }
+
+        //set serverSpinnerString and serverSpinnerAdapter
+        serverSpinnerString = new ArrayList<>();
+        do {
+            serverSpinnerString.add(cursor.getString(cursor.getColumnIndex("server")));
+        } while (cursor.moveToNext());
+        cursor.close();
+        serverSpinnerAdapter =
+                new ArrayAdapter<>(this, R.layout.spinner_text_view, serverSpinnerString);
+        serverSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        serverSpinner.setAdapter(serverSpinnerAdapter);
+        serverNow = serverSpinnerString.get(0);
+
+        //set projectSpinnerString and projectSpinnerAdapter
+        projectSpinnerString = new ArrayList<>();
+        Log.d(TAG, "onCreate: projectSpinnerString is not null");
+        cursor = db.rawQuery(
+                "select * from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE + " where serverId = ?",
+                new String[]{serverId.toString()});
+
+        if (cursor.moveToFirst()) {
+            do {
+                projectSpinnerString.add(cursor.getString(cursor.getColumnIndex("project")));
+            } while (cursor.moveToNext());
+            projectSpinnerAdapter =
+                    new ArrayAdapter<>(this, R.layout.spinner_text_view, projectSpinnerString);
+            projectSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+            projectSpinner.setAdapter(projectSpinnerAdapter);
+            projectNow = projectSpinnerString.get(0);
+            Log.d(TAG, "setData: as i thought " + projectNow);
+        }
+    }
+
+    private void setSpinnersOnClick() {
         serverSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
             @Override
@@ -320,8 +415,12 @@ public class MainActivity extends BaseActivity {
 
                     if ((!serverSpinnerString.get(position).equals(serverNow))
                             && (projectNow.equals(project))) {
-                        pullData();
                         serverNow = serverSpinnerString.get(position);
+                    }
+
+                    if (projectSpinnerString != null) {
+                        cursor.close();
+                        return;
                     }
 
                     projectSpinnerString = new ArrayList<>();
@@ -335,7 +434,6 @@ public class MainActivity extends BaseActivity {
                     projectSpinnerAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
                     projectSpinner.setAdapter(projectSpinnerAdapter);
 
-//                    }
                     cursor.close();
                 }
             }
@@ -354,9 +452,14 @@ public class MainActivity extends BaseActivity {
                 if ((projectNow != null) && (!projectSpinnerString.get(position)
                         .equals(projectNow))) {
                     pullData();
+                    Log.d(TAG, "onItemSelected: SelectedItemPosition2 = "
+                            + projectSpinner.getSelectedItemPosition() + " " + project);
                     projectNow = projectSpinnerString.get(position);
                 } else if (projectNow == null) {
                     projectNow = projectSpinnerString.get(position);
+                } else if (projectNow != null && projectSpinnerString.get(position)
+                        .equals(projectNow)) {
+                    pullData();
                 }
             }
 
@@ -366,40 +469,14 @@ public class MainActivity extends BaseActivity {
             }
 
         });
-
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.setting_button:
-                // TODO: 2016/9/25 完成设置功能
-                
-                break;
-            default:
-                return false;
-        }
-        return true;
-    }
-
-    @Override
-    public void onBackPressed() {
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addCategory(Intent.CATEGORY_HOME);
+    @OnClick(R.id.fabBtn)
+    public void OnFabBtnClicked() {
+        Intent intent = new Intent(this, LoginActivity.class);
         startActivity(intent);
-    }
+        finish();
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
     }
 
     private void pullData() {
@@ -417,10 +494,10 @@ public class MainActivity extends BaseActivity {
         }
         cursor.close();
 
-        viewDataList = new ArrayList<>();
         cursor = db.rawQuery("select id from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
                                      + " where serverId = ? and project = ?",
                              new String[]{serverId.toString(), project});
+
         /**
          * check if the project has been added in the table
          */
@@ -434,6 +511,7 @@ public class MainActivity extends BaseActivity {
                                  new String[]{serverId.toString(), project});
         }
 
+        Log.d(TAG, "pullData: project = " + project);
         /**
          * get project's id
          */
@@ -455,6 +533,7 @@ public class MainActivity extends BaseActivity {
         /**
          * add data to listView if it has data
          */
+        viewDataList.clear();
         int idNow = 1;
         if (cursor.moveToFirst()) {
             for (int i = 1; ; i++) {
@@ -522,6 +601,7 @@ public class MainActivity extends BaseActivity {
 
                         }
                     } catch (Exception e) {
+
                         Message message = new Message();
                         message.what = SET_REFRESH_FALSE;
                         handler.sendMessage(message);
@@ -605,6 +685,70 @@ public class MainActivity extends BaseActivity {
                 }
                 cursor.close();
             }
+        }
+    }
+
+    private void checkServerAndProject() {
+        //check server
+        Cursor cursor = db.rawQuery("select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE,
+                                    new String[]{});
+        if (cursor.moveToFirst()) {
+            Integer serverId;
+            while (true) {
+                if (server.equals(cursor.getString(cursor.getColumnIndex("server")))) {
+                    serverId = cursor.getInt(cursor.getColumnIndex("id"));
+                    break;
+                }
+                if (!cursor.moveToNext()) {
+                    cursor.moveToFirst();
+                    mStartIntent.removeExtra(KEY_SERVER_NAME);
+                    mStartIntent.putExtra(KEY_SERVER_NAME,
+                                          cursor.getString(cursor.getColumnIndex("server")));
+                    project = null;
+                    if (!TextUtils.isEmpty(mStartIntent.getStringExtra(KEY_PROJECT_NAME))) {
+                        mStartIntent.removeExtra(KEY_PROJECT_NAME);
+                    }
+                    cursor.close();
+                    setData();
+                    return;
+                }
+            }
+            cursor.close();
+
+            //check project
+            cursor = db.rawQuery("select * from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                                         + " where serverId = ?",
+                                 new String[]{serverId.toString()});
+            if (cursor.moveToFirst() && project != null) {
+                while (true) {
+                    if (project.equals(cursor.getString(cursor.getColumnIndex("project")))) {
+                        resetSpinners();
+                        break;
+                    }
+                    if (!cursor.moveToNext()) {
+                        cursor.moveToFirst();
+                        mStartIntent.removeExtra(KEY_PROJECT_NAME);
+                        mStartIntent.putExtra(KEY_PROJECT_NAME,
+                                              cursor.getString(cursor.getColumnIndex("project")));
+                        cursor.close();
+                        setData();
+                        return;
+                    }
+                }
+                cursor.close();
+            } else {
+                cursor.close();
+                project = null;
+                if (!TextUtils.isEmpty(mStartIntent.getStringExtra(KEY_PROJECT_NAME))) {
+                    mStartIntent.removeExtra(KEY_PROJECT_NAME);
+                }
+                setData();
+            }
+        } else {
+            cursor.close();
+            server = null;
+            project = null;
+            setData();
         }
     }
 }

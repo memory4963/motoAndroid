@@ -1,6 +1,7 @@
 package com.bolo4963gmail.motoandroid;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -30,6 +31,13 @@ public class SplashActivity extends BaseActivity {
              * create database
              */
             ThisDatabaseHelper.getDatabaseHelper();
+
+            SharedPreferences.Editor editor =
+                    getSharedPreferences(ThisDatabaseHelper.SWITCH_SHARED_PREFERENCES, MODE_PRIVATE)
+                            .edit();
+            editor.putBoolean(ThisDatabaseHelper.BUILD_SUCCESS, true);
+            editor.putBoolean(ThisDatabaseHelper.BUILD_FAILURE, true);
+            editor.apply();
 
             Intent intent = new Intent(SplashActivity.this, MainActivity.class);
             startActivity(intent);

@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".LoginActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context=".LoginActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/login2_toolbar"
@@ -14,31 +14,31 @@
         android:layout_width="match_parent"
         android:layout_height="78dp"
         android:background="@color/primary_color"
+        android:elevation="2dp"
         android:fitsSystemWindows="true"
         android:minHeight="?attr/actionBarSize"
+        android:translationZ="4dp"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        android:elevation="2dp"
-        android:translationZ="4dp">
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:paddingRight="12dp"
-            android:layout_marginEnd="20dp">
+        <!--<RelativeLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:layout_alignParentTop="true"-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:paddingRight="12dp"-->
+        <!--android:layout_marginEnd="20dp">-->
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="持续集成系统"
-                android:textSize="24sp"
-                android:textColor="#ffffff"
-                android:layout_centerInParent="true"/>
+        <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="持续集成系统"-->
+        <!--android:textSize="24sp"-->
+        <!--android:textColor="#ffffff"-->
+        <!--android:layout_centerInParent="true"/>-->
 
-        </RelativeLayout>
+        <!--</RelativeLayout>-->
 
 
 
@@ -53,14 +53,14 @@
             android:id="@+id/login_table2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
             android:layout_marginTop="64dp"
-            android:stretchColumns="1"
+            android:background="@mipmap/login_window"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
-            android:background="@mipmap/login_window"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true">
+            android:stretchColumns="1">
 
             <TableRow>
 
@@ -69,8 +69,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
                     android:layout_span="2"
-                    android:hint="请输入用户名"
-                    android:background="@null"/>
+                    android:background="@null"
+                    android:hint="请输入用户名"/>
 
             </TableRow>
 
@@ -78,11 +78,12 @@
 
                 <EditText
                     android:id="@+id/password"
+                    android:inputType="textPassword"
                     android:layout_width="wrap_content"
                     android:layout_height="48dp"
                     android:layout_span="2"
-                    android:hint="请输入密码"
-                    android:background="@null"/>
+                    android:background="@null"
+                    android:hint="请输入密码"/>
 
             </TableRow>
 
@@ -92,17 +93,17 @@
             android:id="@+id/login_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="登录"
-            android:textSize="24sp"
-            android:textColor="#ffffff"
-            android:background="@drawable/login_button_shape"
+            android:layout_alignEnd="@+id/login_table2"
+            android:layout_alignLeft="@+id/login_table2"
+            android:layout_alignRight="@+id/login_table2"
+            android:layout_alignStart="@+id/login_table2"
             android:layout_below="@+id/login_table2"
             android:layout_marginTop="28dp"
-            android:layout_alignLeft="@+id/login_table2"
-            android:layout_alignStart="@+id/login_table2"
-            android:layout_alignRight="@+id/login_table2"
-            android:layout_alignEnd="@+id/login_table2"
             android:elevation="2dp"
+            android:background="@drawable/connect_button_background"
+            android:text="登录"
+            android:textColor="#ffffff"
+            android:textSize="24sp"
             android:translationZ="2dp"/>
 
     </RelativeLayout>

@@ -9,7 +9,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -35,7 +35,6 @@ public class LoginActivity extends BaseActivity {
     private ProgressDialog progressDialog = null;
     public static final int START_LOGIN2ACTIVITY = 1;
 
-    //    @BindView(R.id.login_back) Button loginBack;
     @BindView(R.id.server_address) EditText address;
     @BindView(R.id.project_name) EditText projectName;
     @BindView(R.id.login_connect_button) Button connectButton;
@@ -57,21 +56,24 @@ public class LoginActivity extends BaseActivity {
     };
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case Login2Activity.RESULT_FOR_LOGIN_ACTIVITY:
+                if (resultCode == RESULT_OK) {
+                    finish();
+                }
+        }
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
+        setSupportActionBar(toolbar);
 
-        toolbar.setNavigationIcon(R.mipmap.back);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
-            }
-        });
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        setTitle("持续集成系统");
 
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();//获得APP自带数据库
         db = dbHelper.getWritableDatabase();
@@ -80,17 +82,20 @@ public class LoginActivity extends BaseActivity {
         address.setText("115.29.114.77");
         projectName.setText("testOne");
 
+    }
 
-//        loginBack.setOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View v) {
-//                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-//                startActivity(intent);
-//                finish();
-//            }
-//        });
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish();
+                return true;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @OnClick(R.id.login_connect_button)
@@ -103,27 +108,42 @@ public class LoginActivity extends BaseActivity {
 
         //add this server to the database
         try {
-            db.execSQL(
-                    "insert into " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " (server) values(?)",
-                    new String[]{address.getText().toString()});//向APP自带数据库中添加此服务器名称
+            Integer serverId = -1;
+            if (!db.rawQuery(
+                    "select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
+                    new String[]{address.getText().toString()}).moveToFirst()) {
 
+
+                db.execSQL("insert into " + ThisDatabaseHelper.SERVER_NAMES_TABLE
+                                   + " (server) values(?)",
+                           new String[]{address.getText().toString()});//向APP自带数据库中添加此服务器名称
+            }
             Cursor cursor = db.rawQuery(
                     "select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE + " where server = ?",
                     new String[]{address.getText().toString()});
-            Integer serverId = -1;
+
             if (cursor.moveToFirst()) {
                 serverId = cursor.getInt(cursor.getColumnIndex("id"));
             }
             cursor.close();
+
+
 
             Log.d(TAG, "onClick: " + projectName.getText().toString());
 
             if (TextUtils.isEmpty(projectName.getText().toString())) {
                 Toast.makeText(LoginActivity.this, "请稍后在设置中输入项目名称", Toast.LENGTH_SHORT).show();
             } else {
-                db.execSQL("insert into " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
-                                   + " (project, serverId) values (?,?)",
-                           new String[]{projectName.getText().toString(), serverId.toString()});
+
+                if (!db.rawQuery("select * from " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                                         + " where project = ? and serverId = ?", new String[]{
+                        projectName.getText().toString(), serverId.toString()
+                }).moveToFirst()) {
+                    db.execSQL("insert into " + ThisDatabaseHelper.PROJECT_NAMES_TABLE
+                                       + " (project, serverId) values (?,?)",
+                               new String[]{projectName.getText().toString(), serverId.toString()});
+                }
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -180,7 +200,6 @@ public class LoginActivity extends BaseActivity {
         progressDialog.dismiss();
         Login2Activity.start(LoginActivity.this, address.getText().toString(),
                              projectName.getText().toString());
-        finish();
     }
 
 }

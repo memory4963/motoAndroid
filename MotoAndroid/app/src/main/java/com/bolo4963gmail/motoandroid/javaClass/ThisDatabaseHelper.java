@@ -19,6 +19,9 @@ public class ThisDatabaseHelper extends SQLiteOpenHelper {
     public static final String PROJECT_NAMES_TABLE = "ProjectName";
     public static final String RESULT_TABLE = "Result";
     public static final String ACCOUNT_TABLE = "Account";
+    public static final String SWITCH_SHARED_PREFERENCES = "SharedPreference";
+    public static final String BUILD_SUCCESS = "BuildSuccess";
+    public static final String BUILD_FAILURE = "BuildFailure";
 
     private static final int DB_VERSION = 1;
 

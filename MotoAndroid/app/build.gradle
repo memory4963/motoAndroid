@@ -20,13 +20,21 @@ android {
     }
 }
 
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.2.1'
     compile files('libs/gson-2.3.jar')
+    apt 'com.jakewharton:butterknife-compiler:8.4.0'
+    compile 'com.android.support:appcompat-v7:23.2.1'
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    compile 'com.github.luckyandyzhang:StatusBarCompat:1.0.1'
     compile 'com.android.support:design:23.2.1'
     compile 'com.jakewharton:butterknife:8.4.0'
-    apt 'com.jakewharton:butterknife-compiler:8.4.0'
+    compile 'com.android.support:support-v4:23.2.1'
 }

@@ -1,7 +1,6 @@
 package com.bolo4963gmail.motoandroid;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -37,6 +36,8 @@ public class Login2Activity extends BaseActivity {
     private static final String TAG = "Login2Activity";
 
     public static final int START_MAIN_ACTIVITY = 1;
+    public static final int RESULT_FOR_LOGIN_ACTIVITY = 2;
+    public static final String DATA_RETURN = "dataReturn";
 
     @BindView(R.id.login2_toolbar) Toolbar toolbar2;
     @BindView(R.id.account) EditText account;
@@ -65,12 +66,12 @@ public class Login2Activity extends BaseActivity {
 
     };
 
-    public static void start(Context context, String url, String projectName) {
+    public static void start(BaseActivity activity, String url, String projectName) {
 
-        Intent starter = new Intent(context, Login2Activity.class);
+        Intent starter = new Intent(activity, Login2Activity.class);
         starter.putExtra(KEY_URL, url);
         starter.putExtra(KEY_PROJECT_NAME, projectName);
-        context.startActivity(starter);
+        activity.startActivityForResult(starter, RESULT_FOR_LOGIN_ACTIVITY);
     }
 
     @Override
@@ -78,11 +79,12 @@ public class Login2Activity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login2);
         ButterKnife.bind(this);
+        setSupportActionBar(toolbar2);
 
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();
         db = dbHelper.getWritableDatabase();
 
-        toolbar2.setNavigationIcon(R.mipmap.back);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar2.setNavigationOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -90,6 +92,7 @@ public class Login2Activity extends BaseActivity {
                 finish();
             }
         });
+        toolbar2.setTitle("持续集成系统");
         // TODO: 2016/9/5 项目完成后删掉
         account.setText("memory4963");
         password.setText("456rtyFGHvbn");
@@ -97,6 +100,7 @@ public class Login2Activity extends BaseActivity {
         Intent intent = getIntent();
         server = intent.getStringExtra("url");
         projectName = intent.getStringExtra("project");
+        Log.d(TAG, "onCreate: projectName = " + projectName);
 
     }
 
@@ -184,6 +188,7 @@ public class Login2Activity extends BaseActivity {
 
     private void StartMainActivity() {
         progressDialog.dismiss();
+        setResult(RESULT_OK, new Intent());
         MainActivity.start(Login2Activity.this, server, projectName, cookie);
         finish();
     }
