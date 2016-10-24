@@ -152,9 +152,9 @@ public class MainActivity extends BaseActivity {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected: setActivity");
             mBinder = (MotoAndroidPullDataService.MyBinder) service;
             mBinder.setActivity(MainActivity.this);
-            Log.d(TAG, "onServiceConnected: setActivity");
         }
 
         @Override
@@ -191,10 +191,6 @@ public class MainActivity extends BaseActivity {
         context.startActivity(starter);
     }
 
-    // TODO: 2016/9/25 每次启动时重新拉取cookie
-    // TODO: 2016/9/27 后台服务监视
-    // TODO: 2016/9/27 更新信息推送
-    // TODO: 2016/9/27 接收全部结果
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -286,8 +282,11 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mBinder.removeActivity();
-        unbindService(connection);
+        if (mBinder != null) {
+            mBinder.removeActivity();
+        }
+        this.getApplicationContext().unbindService(connection);
+
     }
 
     private void setData() {

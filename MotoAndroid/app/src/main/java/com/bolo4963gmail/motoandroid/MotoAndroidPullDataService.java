@@ -10,10 +10,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.Message;
+import android.os.Parcel;
+import android.os.RemoteException;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -21,6 +23,7 @@ import com.bolo4963gmail.motoandroid.javaClass.JsonData;
 import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
 import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
 
+import java.io.FileDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,7 +84,7 @@ public class MotoAndroidPullDataService extends Service {
 
     };
 
-    class MyBinder extends Binder {
+    class MyBinder implements IBinder {
 
         public void setActivity(MainActivity mainActivity) {
             mActivity = mainActivity;
@@ -93,6 +96,51 @@ public class MotoAndroidPullDataService extends Service {
             }
         }
 
+        @Override
+        public String getInterfaceDescriptor() throws RemoteException {
+            return null;
+        }
+
+        @Override
+        public boolean pingBinder() {
+            return false;
+        }
+
+        @Override
+        public boolean isBinderAlive() {
+            return false;
+        }
+
+        @Override
+        public IInterface queryLocalInterface(String descriptor) {
+            return null;
+        }
+
+        @Override
+        public void dump(FileDescriptor fd, String[] args) throws RemoteException {
+
+        }
+
+        @Override
+        public void dumpAsync(FileDescriptor fd, String[] args) throws RemoteException {
+
+        }
+
+        @Override
+        public boolean transact(int code, Parcel data, Parcel reply, int flags)
+                throws RemoteException {
+            return false;
+        }
+
+        @Override
+        public void linkToDeath(DeathRecipient recipient, int flags) throws RemoteException {
+
+        }
+
+        @Override
+        public boolean unlinkToDeath(DeathRecipient recipient, int flags) {
+            return false;
+        }
     }
 
     public MotoAndroidPullDataService() {
@@ -114,6 +162,7 @@ public class MotoAndroidPullDataService extends Service {
         super.onCreate();
         ThisDatabaseHelper thisDatabaseHelper = ThisDatabaseHelper.getDatabaseHelper();
         db = thisDatabaseHelper.getWritableDatabase();
+        mBinder = new MyBinder();
         Log.d(TAG, "onCreate: created");
     }
 
