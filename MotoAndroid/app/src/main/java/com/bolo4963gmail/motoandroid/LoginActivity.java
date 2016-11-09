@@ -72,6 +72,9 @@ public class LoginActivity extends BaseActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
 
+        address.setText("115.29.114.77");
+        projectName.setText("motoAndroid");
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setTitle("持续集成系统");
 

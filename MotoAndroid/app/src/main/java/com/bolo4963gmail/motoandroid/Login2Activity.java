@@ -81,6 +81,9 @@ public class Login2Activity extends BaseActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar2);
 
+        account.setText("memory4963");
+        password.setText("456rtyFGHvbn");
+
         ThisDatabaseHelper dbHelper = ThisDatabaseHelper.getDatabaseHelper();
         db = dbHelper.getWritableDatabase();
 

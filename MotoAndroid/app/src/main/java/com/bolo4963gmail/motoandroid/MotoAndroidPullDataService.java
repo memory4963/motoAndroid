@@ -10,12 +10,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Message;
-import android.os.Parcel;
-import android.os.RemoteException;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -23,7 +21,6 @@ import com.bolo4963gmail.motoandroid.javaClass.JsonData;
 import com.bolo4963gmail.motoandroid.javaClass.OkHttpConnection;
 import com.bolo4963gmail.motoandroid.javaClass.ThisDatabaseHelper;
 
-import java.io.FileDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +81,7 @@ public class MotoAndroidPullDataService extends Service {
 
     };
 
-    class MyBinder implements IBinder {
+    class MyBinder extends Binder {
 
         public void setActivity(MainActivity mainActivity) {
             mActivity = mainActivity;
@@ -94,52 +91,6 @@ public class MotoAndroidPullDataService extends Service {
             if (mActivity != null) {
                 mActivity = null;
             }
-        }
-
-        @Override
-        public String getInterfaceDescriptor() throws RemoteException {
-            return null;
-        }
-
-        @Override
-        public boolean pingBinder() {
-            return false;
-        }
-
-        @Override
-        public boolean isBinderAlive() {
-            return false;
-        }
-
-        @Override
-        public IInterface queryLocalInterface(String descriptor) {
-            return null;
-        }
-
-        @Override
-        public void dump(FileDescriptor fd, String[] args) throws RemoteException {
-
-        }
-
-        @Override
-        public void dumpAsync(FileDescriptor fd, String[] args) throws RemoteException {
-
-        }
-
-        @Override
-        public boolean transact(int code, Parcel data, Parcel reply, int flags)
-                throws RemoteException {
-            return false;
-        }
-
-        @Override
-        public void linkToDeath(DeathRecipient recipient, int flags) throws RemoteException {
-
-        }
-
-        @Override
-        public boolean unlinkToDeath(DeathRecipient recipient, int flags) {
-            return false;
         }
     }
 
@@ -154,6 +105,11 @@ public class MotoAndroidPullDataService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        if (mBinder == null) {
+            mBinder = new MyBinder();
+        }
+
+        Log.d(TAG, "onBind() called with: " + "intent = [" + intent + "]");
         return mBinder;
     }
 
@@ -162,7 +118,6 @@ public class MotoAndroidPullDataService extends Service {
         super.onCreate();
         ThisDatabaseHelper thisDatabaseHelper = ThisDatabaseHelper.getDatabaseHelper();
         db = thisDatabaseHelper.getWritableDatabase();
-        mBinder = new MyBinder();
         Log.d(TAG, "onCreate: created");
     }
 
@@ -271,6 +226,10 @@ public class MotoAndroidPullDataService extends Service {
                  * pull data from server and add data to listView
                  */
                 Integer id = idNow;
+                if (mActivity != null && !(mActivity.isDestroyed()
+                        || (mActivity.isFinishing()))) {
+                    continue;
+                }
 
                 while (true) {
                     Response response = OkHttpConnection.GETconnecting(
@@ -294,6 +253,7 @@ public class MotoAndroidPullDataService extends Service {
                                            + " (result, projectId) values(?, ?)", new String[]{
                                 result.toString(), projectId.toString()
                         });
+                        Log.d(TAG, "pullData: insert data to database");
                         id++;
 
                         SharedPreferences sharedPreferences =
@@ -319,7 +279,7 @@ public class MotoAndroidPullDataService extends Service {
 
                     } catch (Exception e) {
 
-                        if (mActivity != null && !(mActivity.isDestroyed()
+                        if (mActivity == null || (mActivity.isDestroyed()
                                 || (mActivity.isFinishing()))) {
 
                             Message message = new Message();

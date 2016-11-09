@@ -198,8 +198,7 @@ public class MainActivity extends BaseActivity {
 
         Intent intent = new Intent(MainActivity.this, MotoAndroidPullDataService.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        boolean bool =
-                this.getApplicationContext().bindService(intent, connection, BIND_AUTO_CREATE);
+        boolean bool = this.getApplicationContext().bindService(intent, connection, BIND_AUTO_CREATE);
         Log.d(TAG, "onCreate: bindService bool = " + bool);
         startService(intent);
 
@@ -516,6 +515,7 @@ public class MainActivity extends BaseActivity {
 
     public void rePullData() {
         pullData();
+        Log.d(TAG, "rePullData: run");
     }
 
     private void pullData() {
@@ -575,8 +575,10 @@ public class MainActivity extends BaseActivity {
         viewDataList.clear();
         int idNow = 1;
         if (cursor.moveToFirst()) {
+            Log.d(TAG, "pullData: cursor's length : " + cursor.getCount());
             for (int i = 1; ; i++) {
                 addData(cursor.getInt(cursor.getColumnIndex("result")), i);
+                Log.d(TAG, "pullData: idNow is " + i);
                 if (!cursor.moveToNext()) {
                     idNow = i + 1;
                     break;
