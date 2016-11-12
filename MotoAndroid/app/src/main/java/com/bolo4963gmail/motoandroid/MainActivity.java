@@ -49,8 +49,6 @@ import okhttp3.Response;
 
 public class MainActivity extends BaseActivity {
 
-    int testId = 2;
-
     private static final int UPDATE_TEXT = 1;
     private static final int SET_REFRESH_FALSE = 2;
     private static final int CONNECT_FALSE = 3;
@@ -645,11 +643,6 @@ public class MainActivity extends BaseActivity {
                                 Message message = new Message();
                                 message.what = SEND_NOTIFICATION;
                                 handler.sendMessage(message);
-                            }
-
-                            if (id > testId) {
-                                testId += 2;
-                                throw new Exception();
                             }
 
                         }
