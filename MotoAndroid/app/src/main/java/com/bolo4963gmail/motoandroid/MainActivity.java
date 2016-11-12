@@ -602,6 +602,8 @@ public class MainActivity extends BaseActivity {
                             OkHttpConnection.SpliceGetUrl(project, id, server), cookie);
                     try {
                         JsonData jsonData = OkHttpConnection.setJsonDataFromResponse(response);
+                        response.close();
+
                         if (jsonData == null && id == 1) {
                             Message message = new Message();
                             message.what = CONNECT_FALSE;
