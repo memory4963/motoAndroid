@@ -49,6 +49,8 @@ import okhttp3.Response;
 
 public class MainActivity extends BaseActivity {
 
+    int testId = 2;
+
     private static final int UPDATE_TEXT = 1;
     private static final int SET_REFRESH_FALSE = 2;
     private static final int CONNECT_FALSE = 3;
@@ -578,7 +580,6 @@ public class MainActivity extends BaseActivity {
             Log.d(TAG, "pullData: cursor's length : " + cursor.getCount());
             for (int i = 1; ; i++) {
                 addData(cursor.getInt(cursor.getColumnIndex("result")), i);
-                Log.d(TAG, "pullData: idNow is " + i);
                 if (!cursor.moveToNext()) {
                     idNow = i + 1;
                     break;
@@ -646,8 +647,15 @@ public class MainActivity extends BaseActivity {
                                 handler.sendMessage(message);
                             }
 
+                            if (id > testId) {
+                                testId += 2;
+                                throw new Exception();
+                            }
+
                         }
                     } catch (Exception e) {
+
+                        Log.d(TAG, "run: id = " + id);
 
                         Message message = new Message();
                         message.what = SET_REFRESH_FALSE;

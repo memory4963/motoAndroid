@@ -72,7 +72,10 @@ public class MotoAndroidPullDataService extends Service {
                     notificationId++;
                     break;
                 case PULL_DATA:
-                    mActivity.rePullData();
+                    if ((mActivity != null) && ((!mActivity.isDestroyed())
+                            || (!mActivity.isFinishing()))) {
+                        mActivity.rePullData();
+                    }
                     break;
                 default:
                     break;
@@ -89,6 +92,7 @@ public class MotoAndroidPullDataService extends Service {
 
         public void removeActivity() {
             if (mActivity != null) {
+                Log.d(TAG, "removeActivity: mActivity is null now");
                 mActivity = null;
             }
         }
@@ -162,7 +166,6 @@ public class MotoAndroidPullDataService extends Service {
 
         Cursor serverCursor = db.rawQuery("select * from " + ThisDatabaseHelper.SERVER_NAMES_TABLE,
                                           new String[]{});
-        // TODO: 2016/10/21 修改cookie储存方式
 
         if (serverCursor.moveToFirst()) {
             do {
@@ -226,8 +229,7 @@ public class MotoAndroidPullDataService extends Service {
                  * pull data from server and add data to listView
                  */
                 Integer id = idNow;
-                if (mActivity != null && !(mActivity.isDestroyed()
-                        || (mActivity.isFinishing()))) {
+                if (mActivity != null && !(mActivity.isDestroyed() || (mActivity.isFinishing()))) {
                     continue;
                 }
 
